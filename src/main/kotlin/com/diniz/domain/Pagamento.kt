@@ -1,7 +1,6 @@
 package com.diniz.domain
 
 import jakarta.persistence.*
-import java.math.BigDecimal
 import java.time.LocalDateTime
 
 @Entity
@@ -17,15 +16,22 @@ data class Pagamento (
     var cliente: Cliente,
 
     @ManyToOne
-    @JoinColumn(name = "profissional_id")
-    var profissional: Profissional,
+    @JoinColumn(name = "pacote_id")
+    var pacote: Pacote?,
 
-    var categoria: String,
-    var valor: BigDecimal,
+    @OneToMany(
+        mappedBy = "pagamento",
+        cascade = [CascadeType.ALL],
+        fetch = FetchType.EAGER,
+        orphanRemoval = true
+    )
+    var servicosPagamento: MutableList<ServicoPagamento> = mutableListOf(),
+
     var metodoPagamento: String,
     var data: LocalDateTime,
-    var descricao: String
+    var descricao: String,
+    var tipoDeServico: String
 
 ) {
-    constructor(): this(null, Cliente(), Profissional(), "", BigDecimal.ZERO, "", LocalDateTime.now(), "")
+    constructor(): this(null, Cliente(), Pacote(), mutableListOf(), "", LocalDateTime.now(), "", "")
 }
