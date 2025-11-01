@@ -43,14 +43,12 @@ interface PagamentoRepository : JpaRepository<Pagamento, Long> {
     WHERE p.data >= :startDate
       AND p.data <= :endDate
       AND (:category IS NULL OR sp.servico.categoria = :category)
-      AND (:metodoPagamento IS NULL OR :metodoPagamento IN (SELECT DISTINCT mp.metodoPagamento FROM p.metodosPagamento mp))
       AND (:profissional IS NULL OR sp.profissional.id = :profissional)
     """)
     fun getReportInfo(
         startDate: LocalDateTime,
         endDate: LocalDateTime,
         category: String?,
-        metodoPagamento: String?,
         profissional: Long?
     ): ReportDTO
 
@@ -60,12 +58,10 @@ interface PagamentoRepository : JpaRepository<Pagamento, Long> {
             JOIN p.servicosPagamento sp
         WHERE p.data BETWEEN :startDate AND :endDate
             AND (:category IS NULL OR sp.servico.categoria = :category)
-            AND (:metodoPagamento IS NULL OR :metodoPagamento IN (SELECT DISTINCT mp.metodoPagamento FROM p.metodosPagamento mp))
             AND (:profissional IS NULL OR sp.profissional.id = :profissional)
     """)
     fun getTodayRevenue(
         category: String?,
-        metodoPagamento: String?,
         profissional: Long?,
         startDate: LocalDateTime = LocalDate.now().atStartOfDay(),
         endDate: LocalDateTime = LocalDate.now().atStartOfDay().plusDays(1)
@@ -81,7 +77,6 @@ interface PagamentoRepository : JpaRepository<Pagamento, Long> {
         WHERE data >= :startDate
           AND data <= :endDate
           AND (:category IS NULL OR s.categoria = :category)
-          AND (:metodoPagamento IS NULL OR :metodoPagamento IN (SELECT DISTINCT mp.metodo_pagamento FROM metodo_pagamento mp WHERE mp.pagamento_id = p.id))
           AND (:profissional IS NULL OR prof.id = :profissional)
         GROUP BY STRFTIME('%Y-%m-%d', p.data / 1000, 'unixepoch', '-3 hours')
         ORDER BY STRFTIME('%Y-%m-%d', p.data / 1000, 'unixepoch', '-3 hours')
@@ -90,7 +85,6 @@ interface PagamentoRepository : JpaRepository<Pagamento, Long> {
         startDate: LocalDateTime,
         endDate: LocalDateTime,
         category: String?,
-        metodoPagamento: String?,
         profissional: Long?
     ): List<ReportDailyRevenueProjection>
 
@@ -107,7 +101,6 @@ interface PagamentoRepository : JpaRepository<Pagamento, Long> {
         WHERE data >= :startDate
           AND data <= :endDate
           AND (:category IS NULL OR s.categoria = :category)
-          AND (:metodoPagamento IS NULL OR :metodoPagamento IN (SELECT DISTINCT mp.metodo_pagamento FROM metodo_pagamento mp WHERE mp.pagamento_id = p.id))
           AND (:profissional IS NULL OR prof.id = :profissional)
         GROUP BY s.categoria
     """, nativeQuery = true)
@@ -115,7 +108,6 @@ interface PagamentoRepository : JpaRepository<Pagamento, Long> {
         startDate: LocalDateTime,
         endDate: LocalDateTime,
         category: String?,
-        metodoPagamento: String?,
         profissional: Long?
     ): List<ReportRevenueByCategoryProjection>
 
@@ -129,7 +121,6 @@ interface PagamentoRepository : JpaRepository<Pagamento, Long> {
         WHERE p.data >= :startDate
           AND p.data <= :endDate
           AND (:category IS NULL OR sp.servico.categoria = :category)
-          AND (:metodoPagamento IS NULL OR :metodoPagamento IN (SELECT DISTINCT mp.metodoPagamento FROM p.metodosPagamento mp))
           AND (:profissional IS NULL OR sp.profissional.id = :profissional)
         GROUP BY sp.profissional.name
         ORDER BY sp.profissional.name
@@ -138,7 +129,6 @@ interface PagamentoRepository : JpaRepository<Pagamento, Long> {
         startDate: LocalDateTime,
         endDate: LocalDateTime,
         category: String?,
-        metodoPagamento: String?,
         profissional: Long?
     ): List<ReportRevenueByProfessionalDTO>
 
@@ -152,7 +142,6 @@ interface PagamentoRepository : JpaRepository<Pagamento, Long> {
             WHERE sp.pagamento.data >= :startDate
               AND sp.pagamento.data <= :endDate
               AND (:category IS NULL OR sp.servico.categoria = :category)
-              AND (:metodoPagamento IS NULL OR mp.metodoPagamento = :metodoPagamento)
               AND (:profissional IS NULL OR sp.profissional.id = :profissional)
         )
         GROUP BY mp.metodoPagamento
@@ -161,7 +150,6 @@ interface PagamentoRepository : JpaRepository<Pagamento, Long> {
         startDate: LocalDateTime,
         endDate: LocalDateTime,
         category: String?,
-        metodoPagamento: String?,
         profissional: Long?
     ): List<ReportPaymentMethodsDTO>
 

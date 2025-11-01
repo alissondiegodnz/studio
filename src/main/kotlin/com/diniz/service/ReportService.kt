@@ -7,6 +7,7 @@ import com.diniz.dto.ReportRevenueByCategoryDTO
 import com.diniz.dto.ReportRevenueByProfessionalDTO
 import com.diniz.helper.DateHelper
 import com.diniz.repository.PagamentoRepository
+import jakarta.persistence.EntityManager
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
@@ -15,7 +16,8 @@ import java.math.RoundingMode
 @Service
 class ReportService(
     private val pagamentoRepository: PagamentoRepository,
-    private val dateHelper: DateHelper
+    private val dateHelper: DateHelper,
+    private val entityManager: EntityManager
 ) {
 
     @Cacheable(value = ["buildReports"])
@@ -26,10 +28,10 @@ class ReportService(
         val paramMetodoPagamento = params["paymentMethod"]
         val paramIdProfissional = params["professionalId"].run { if (isNullOrBlank()) null else toLong() }
 
-        val reportInfo = pagamentoRepository.getReportInfo(paramStartDate, paramEndDate, paramCategoria, paramMetodoPagamento, paramIdProfissional)
-        val todayRevenue = pagamentoRepository.getTodayRevenue(paramCategoria, paramMetodoPagamento, paramIdProfissional)
+        val reportInfo = pagamentoRepository.getReportInfo(paramStartDate, paramEndDate, paramCategoria, paramIdProfissional)
+        val todayRevenue = pagamentoRepository.getTodayRevenue(paramCategoria, paramIdProfissional)
 
-        val dailyRevenueProjectionList = pagamentoRepository.getDailyRevenue(paramStartDate, paramEndDate, paramCategoria, paramMetodoPagamento, paramIdProfissional)
+        val dailyRevenueProjectionList = pagamentoRepository.getDailyRevenue(paramStartDate, paramEndDate, paramCategoria, paramIdProfissional)
         val dailyRevenueDTOList = dailyRevenueProjectionList.map {
             ReportDailyRevenueDTO(
                 dateHelper.formatePara_DD_MM_YYYY(it.date, DateHelper.DATE_TIME_FORMATTER_YYYY_MM_DD),
@@ -37,7 +39,7 @@ class ReportService(
             )
         }
 
-        val revenueByCategoryProjectionList = pagamentoRepository.getRevenueByCategory(paramStartDate, paramEndDate, paramCategoria, paramMetodoPagamento, paramIdProfissional)
+        val revenueByCategoryProjectionList = pagamentoRepository.getRevenueByCategory(paramStartDate, paramEndDate, paramCategoria, paramIdProfissional)
         val revenueByCategoryDTOList = revenueByCategoryProjectionList.map {
             ReportRevenueByCategoryDTO(
                 it.category,
@@ -46,8 +48,8 @@ class ReportService(
             )
         }
 
-        val revenueByProfessionalDTOList = pagamentoRepository.getRevenueByProfessional(paramStartDate, paramEndDate, paramCategoria, paramMetodoPagamento, paramIdProfissional)
-        val revenueByPaymentMethodsDTOList = pagamentoRepository.getRevenueByPaymentMethod(paramStartDate, paramEndDate, paramCategoria, paramMetodoPagamento, paramIdProfissional)
+        val revenueByProfessionalDTOList = pagamentoRepository.getRevenueByProfessional(paramStartDate, paramEndDate, paramCategoria, paramIdProfissional)
+        val revenueByPaymentMethodsDTOList = pagamentoRepository.getRevenueByPaymentMethod(paramStartDate, paramEndDate, paramCategoria, paramIdProfissional)
 
         return ReportDTO(
             todayRevenue, reportInfo.totalRevenue, reportInfo.totalPayments, reportInfo.totalServices,
@@ -103,5 +105,14 @@ class ReportService(
                 ReportPaymentMethodsDTO("Cartão de Crédito", BigDecimal("200"))
             )
         )
+    }
+
+    fun testeJPQL(params: Map<String, String?>) {
+        val query = entityManager.createQuery("""
+            SELECT 1
+            FROM Pagamento p
+        """, Any::class.java)
+        query.setParameter("startDate", "")
+        val resultado = query.resultList
     }
 }
