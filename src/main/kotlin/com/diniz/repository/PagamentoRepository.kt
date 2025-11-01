@@ -2,10 +2,8 @@ package com.diniz.repository
 
 import com.diniz.domain.Pagamento
 import com.diniz.dto.ReportDTO
-import com.diniz.dto.ReportDailyRevenueDTO
 import com.diniz.dto.ReportDailyRevenueProjection
 import com.diniz.dto.ReportPaymentMethodsDTO
-import com.diniz.dto.ReportRevenueByCategoryDTO
 import com.diniz.dto.ReportRevenueByCategoryProjection
 import com.diniz.dto.ReportRevenueByProfessionalDTO
 import org.springframework.data.jpa.repository.JpaRepository
@@ -36,109 +34,135 @@ interface PagamentoRepository : JpaRepository<Pagamento, Long> {
         idProfissional: Long?
     ): List<Pagamento>
 
-//    @Query("""
-//    SELECT COALESCE(SUM(p.valor), 0)                  AS totalRevenue,
-//        CAST(COALESCE(AVG(p.valor), 0) AS BigDecimal) AS averagePayment,
-//        CAST(COALESCE(COUNT(p.id), 0) AS Long)        AS totalServices
-//    FROM Pagamento p
-//    WHERE p.data >= :startDate
-//      AND p.data <= :endDate
-//      AND (:category IS NULL OR p.categoria = :category)
-//      AND (:profissional IS NULL OR p.profissional.id = :profissional)
-//    """)
-//    fun getReportInfo(
-//        startDate: LocalDateTime,
-//        endDate: LocalDateTime,
-//        category: String?,
-//        profissional: Long?
-//    ): ReportDTO
-//
-//    @Query("""
-//        SELECT COALESCE(SUM(p.valor), 0) AS todayRevenue
-//        FROM Pagamento p
-//        WHERE p.data BETWEEN :startDate AND :endDate
-//            AND (:category IS NULL OR p.categoria = :category)
-//            AND (:profissional IS NULL OR p.profissional.id = :profissional)
-//    """)
-//    fun getTodayRevenue(
-//        category: String?,
-//        profissional: Long?,
-//        startDate: LocalDateTime = LocalDate.now().atStartOfDay(),
-//        endDate: LocalDateTime = LocalDate.now().atStartOfDay().plusDays(1)
-//    ): BigDecimal
-//
-//    @Query(value = """
-//        SELECT STRFTIME('%Y-%m-%d', data / 1000, 'unixepoch', '-3 hours') AS date,
-//               CAST(COALESCE(SUM(valor), 0) AS REAL)          AS value
-//        FROM pagamento
-//        WHERE data >= :startDate
-//          AND data <= :endDate
-//          AND (:category IS NULL OR categoria = :category)
-//          AND (:profissional IS NULL OR profissional_id = :profissional)
-//        GROUP BY STRFTIME('%Y-%m-%d', data / 1000, 'unixepoch', '-3 hours')
-//        ORDER BY STRFTIME('%Y-%m-%d', data / 1000, 'unixepoch', '-3 hours')
-//    """, nativeQuery = true)
-//    fun getDailyRevenue(
-//        startDate: LocalDateTime,
-//        endDate: LocalDateTime,
-//        category: String?,
-//        profissional: Long?
-//    ): List<ReportDailyRevenueProjection>
-//
-//    @Query(value = """
-//        SELECT
-//            p.categoria                           AS category,
-//            CAST(COALESCE(SUM(valor), 0) AS REAL) AS value,
-//            CAST(SUM(p.valor) AS REAL) * 100.0 /
-//                SUM(SUM(p.valor)) OVER ()         AS percentage
-//        FROM pagamento p
-//        WHERE data >= :startDate
-//          AND data <= :endDate
-//          AND (:category IS NULL OR categoria = :category)
-//          AND (:profissional IS NULL OR profissional_id = :profissional)
-//        GROUP BY p.categoria
-//    """, nativeQuery = true)
-//    fun getRevenueByCategory(
-//        startDate: LocalDateTime,
-//        endDate: LocalDateTime,
-//        category: String?,
-//        profissional: Long?
-//    ): List<ReportRevenueByCategoryProjection>
-//
-//    @Query("""
-//        SELECT p.profissional.name                AS name,
-//           CAST(COALESCE(COUNT(p.id), 0) AS Long) AS services,
-//            COALESCE(SUM(p.valor), 0)             AS total
-//        FROM Pagamento p
-//        WHERE p.data >= :startDate
-//          AND p.data <= :endDate
-//          AND (:category IS NULL OR p.categoria = :category)
-//          AND (:profissional IS NULL OR p.profissional.id = :profissional)
-//        GROUP BY p.profissional.name
-//        ORDER BY p.profissional.name
-//    """)
-//    fun getRevenueByProfessional(
-//        startDate: LocalDateTime,
-//        endDate: LocalDateTime,
-//        category: String?,
-//        profissional: Long?
-//    ): List<ReportRevenueByProfessionalDTO>
-//
-//    @Query("""
-//        SELECT p.metodoPagamento      AS method,
-//	        COALESCE(SUM(p.valor), 0) AS value
-//        FROM Pagamento p
-//        WHERE p.data >= :startDate
-//          AND p.data <= :endDate
-//          AND (:category IS NULL OR p.categoria = :category)
-//          AND (:profissional IS NULL OR p.profissional.id = :profissional)
-//        GROUP BY p.metodoPagamento
-//    """)
-//    fun getRevenueByPaymentMethod(
-//        startDate: LocalDateTime,
-//        endDate: LocalDateTime,
-//        category: String?,
-//        profissional: Long?
-//    ): List<ReportPaymentMethodsDTO>
+    @Query("""
+    SELECT COALESCE(SUM(sp.valor), 0)                    AS totalRevenue,
+        CAST(COALESCE(COUNT(DISTINCT p.id), 0) AS Long)  AS totalPayments,
+        CAST(COALESCE(COUNT(DISTINCT sp.id), 0) AS Long) AS totalServices
+    FROM Pagamento p
+        JOIN p.servicosPagamento sp
+    WHERE p.data >= :startDate
+      AND p.data <= :endDate
+      AND (:category IS NULL OR sp.servico.categoria = :category)
+      AND (:metodoPagamento IS NULL OR :metodoPagamento IN (SELECT DISTINCT mp.metodoPagamento FROM p.metodosPagamento mp))
+      AND (:profissional IS NULL OR sp.profissional.id = :profissional)
+    """)
+    fun getReportInfo(
+        startDate: LocalDateTime,
+        endDate: LocalDateTime,
+        category: String?,
+        metodoPagamento: String?,
+        profissional: Long?
+    ): ReportDTO
+
+    @Query("""
+        SELECT COALESCE(SUM(sp.valor), 0) AS todayRevenue
+        FROM Pagamento p
+            JOIN p.servicosPagamento sp
+        WHERE p.data BETWEEN :startDate AND :endDate
+            AND (:category IS NULL OR sp.servico.categoria = :category)
+            AND (:metodoPagamento IS NULL OR :metodoPagamento IN (SELECT DISTINCT mp.metodoPagamento FROM p.metodosPagamento mp))
+            AND (:profissional IS NULL OR sp.profissional.id = :profissional)
+    """)
+    fun getTodayRevenue(
+        category: String?,
+        metodoPagamento: String?,
+        profissional: Long?,
+        startDate: LocalDateTime = LocalDate.now().atStartOfDay(),
+        endDate: LocalDateTime = LocalDate.now().atStartOfDay().plusDays(1)
+    ): BigDecimal
+
+    @Query(value = """
+        SELECT STRFTIME('%Y-%m-%d', p.data / 1000, 'unixepoch', '-3 hours') AS date,
+               CAST(COALESCE(SUM(sp.valor), 0) AS REAL)                     AS value
+        FROM pagamento p
+            JOIN servico_pagamento sp ON sp.pagamento_id = p.id
+            JOIN servico s ON s.id = sp.servico_id
+            JOIN profissional prof ON prof.id = sp.profissional_id
+        WHERE data >= :startDate
+          AND data <= :endDate
+          AND (:category IS NULL OR s.categoria = :category)
+          AND (:metodoPagamento IS NULL OR :metodoPagamento IN (SELECT DISTINCT mp.metodo_pagamento FROM metodo_pagamento mp WHERE mp.pagamento_id = p.id))
+          AND (:profissional IS NULL OR prof.id = :profissional)
+        GROUP BY STRFTIME('%Y-%m-%d', p.data / 1000, 'unixepoch', '-3 hours')
+        ORDER BY STRFTIME('%Y-%m-%d', p.data / 1000, 'unixepoch', '-3 hours')
+    """, nativeQuery = true)
+    fun getDailyRevenue(
+        startDate: LocalDateTime,
+        endDate: LocalDateTime,
+        category: String?,
+        metodoPagamento: String?,
+        profissional: Long?
+    ): List<ReportDailyRevenueProjection>
+
+    @Query(value = """
+        SELECT
+            s.categoria                              AS category,
+            CAST(COALESCE(SUM(sp.valor), 0) AS REAL) AS value,
+            CAST(SUM(sp.valor) AS REAL) * 100.0 /
+                SUM(SUM(sp.valor)) OVER ()           AS percentage
+        FROM pagamento p
+            JOIN servico_pagamento sp ON sp.pagamento_id = p.id
+            JOIN servico s ON s.id = sp.servico_id
+            JOIN profissional prof ON prof.id = sp.profissional_id
+        WHERE data >= :startDate
+          AND data <= :endDate
+          AND (:category IS NULL OR s.categoria = :category)
+          AND (:metodoPagamento IS NULL OR :metodoPagamento IN (SELECT DISTINCT mp.metodo_pagamento FROM metodo_pagamento mp WHERE mp.pagamento_id = p.id))
+          AND (:profissional IS NULL OR prof.id = :profissional)
+        GROUP BY s.categoria
+    """, nativeQuery = true)
+    fun getRevenueByCategory(
+        startDate: LocalDateTime,
+        endDate: LocalDateTime,
+        category: String?,
+        metodoPagamento: String?,
+        profissional: Long?
+    ): List<ReportRevenueByCategoryProjection>
+
+    @Query("""
+        SELECT sp.profissional.name                         AS name,
+           CAST(COALESCE(COUNT(DISTINCT sp.id), 0) AS Long) AS services,
+           CAST(COALESCE(COUNT(DISTINCT p.id), 0) AS Long)  AS payments,
+           COALESCE(SUM(sp.valor), 0)                       AS total
+        FROM Pagamento p
+            JOIN p.servicosPagamento sp
+        WHERE p.data >= :startDate
+          AND p.data <= :endDate
+          AND (:category IS NULL OR sp.servico.categoria = :category)
+          AND (:metodoPagamento IS NULL OR :metodoPagamento IN (SELECT DISTINCT mp.metodoPagamento FROM p.metodosPagamento mp))
+          AND (:profissional IS NULL OR sp.profissional.id = :profissional)
+        GROUP BY sp.profissional.name
+        ORDER BY sp.profissional.name
+    """)
+    fun getRevenueByProfessional(
+        startDate: LocalDateTime,
+        endDate: LocalDateTime,
+        category: String?,
+        metodoPagamento: String?,
+        profissional: Long?
+    ): List<ReportRevenueByProfessionalDTO>
+
+    @Query("""
+        SELECT mp.metodoPagamento      AS method,
+	        COALESCE(SUM(mp.valor), 0) AS value
+        FROM MetodoPagamento mp
+        WHERE mp.pagamento.id IN (
+            SELECT DISTINCT sp.pagamento.id
+            FROM ServicoPagamento sp
+            WHERE sp.pagamento.data >= :startDate
+              AND sp.pagamento.data <= :endDate
+              AND (:category IS NULL OR sp.servico.categoria = :category)
+              AND (:metodoPagamento IS NULL OR mp.metodoPagamento = :metodoPagamento)
+              AND (:profissional IS NULL OR sp.profissional.id = :profissional)
+        )
+        GROUP BY mp.metodoPagamento
+    """)
+    fun getRevenueByPaymentMethod(
+        startDate: LocalDateTime,
+        endDate: LocalDateTime,
+        category: String?,
+        metodoPagamento: String?,
+        profissional: Long?
+    ): List<ReportPaymentMethodsDTO>
 
 }

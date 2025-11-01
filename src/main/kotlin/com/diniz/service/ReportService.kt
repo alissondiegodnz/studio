@@ -20,40 +20,44 @@ class ReportService(
 
     @Cacheable(value = ["buildReports"])
     fun buildReportDTO(params: Map<String, String?>): ReportDTO {
-//        val paramStartDate = dateHelper.obtenhaDataHoraInicioDoDia(params["startDate"])!!
-//        val paramEndDate = dateHelper.obtenhaDataHoraFimDoDia(params["endDate"])!!
-//        val paramCategoria = params["category"]
-//        val paramIdProfissional = params["professionalId"].run { if (isNullOrBlank()) null else toLong() }
-//
-//        val reportInfo = pagamentoRepository.getReportInfo(paramStartDate, paramEndDate, paramCategoria, paramIdProfissional)
-//        val todayRevenue = pagamentoRepository.getTodayRevenue(paramCategoria, paramIdProfissional)
-//
-//        val dailyRevenueProjectionList = pagamentoRepository.getDailyRevenue(paramStartDate, paramEndDate, paramCategoria, paramIdProfissional)
-//        val dailyRevenueDTOList = dailyRevenueProjectionList.map {
-//            ReportDailyRevenueDTO(
-//                dateHelper.formatePara_DD_MM_YYYY(it.date, DateHelper.DATE_TIME_FORMATTER_YYYY_MM_DD),
-//                BigDecimal.valueOf(it.value).setScale(2, RoundingMode.HALF_UP)
-//            )
-//        }
-//
-//        val revenueByCategoryProjectionList = pagamentoRepository.getRevenueByCategory(paramStartDate, paramEndDate, paramCategoria, paramIdProfissional)
-//        val revenueByCategoryDTOList = revenueByCategoryProjectionList.map {
-//            ReportRevenueByCategoryDTO(
-//                it.category,
-//                BigDecimal.valueOf(it.value).setScale(2, RoundingMode.HALF_UP),
-//                BigDecimal.valueOf(it.percentage).setScale(2, RoundingMode.HALF_UP)
-//            )
-//        }
-//
-//        val revenueByProfessionalDTOList = pagamentoRepository.getRevenueByProfessional(paramStartDate, paramEndDate, paramCategoria, paramIdProfissional)
-//        val revenueByPaymentMethodsDTOList = pagamentoRepository.getRevenueByPaymentMethod(paramStartDate, paramEndDate, paramCategoria, paramIdProfissional)
-//
-//        return ReportDTO(
-//            todayRevenue, reportInfo.totalRevenue, reportInfo.averagePayment, reportInfo.totalServices,
-//            dailyRevenueDTOList, revenueByCategoryDTOList, revenueByProfessionalDTOList, revenueByPaymentMethodsDTOList
-//        )
+        val paramStartDate = dateHelper.obtenhaDataHoraInicioDoDia(params["startDate"])!!
+        val paramEndDate = dateHelper.obtenhaDataHoraFimDoDia(params["endDate"])!!
+        val paramCategoria = params["category"]
+        val paramMetodoPagamento = params["paymentMethod"]
+        val paramIdProfissional = params["professionalId"].run { if (isNullOrBlank()) null else toLong() }
+
+        val reportInfo = pagamentoRepository.getReportInfo(paramStartDate, paramEndDate, paramCategoria, paramMetodoPagamento, paramIdProfissional)
+        val todayRevenue = pagamentoRepository.getTodayRevenue(paramCategoria, paramMetodoPagamento, paramIdProfissional)
+
+        val dailyRevenueProjectionList = pagamentoRepository.getDailyRevenue(paramStartDate, paramEndDate, paramCategoria, paramMetodoPagamento, paramIdProfissional)
+        val dailyRevenueDTOList = dailyRevenueProjectionList.map {
+            ReportDailyRevenueDTO(
+                dateHelper.formatePara_DD_MM_YYYY(it.date, DateHelper.DATE_TIME_FORMATTER_YYYY_MM_DD),
+                BigDecimal.valueOf(it.value).setScale(2, RoundingMode.HALF_UP)
+            )
+        }
+
+        val revenueByCategoryProjectionList = pagamentoRepository.getRevenueByCategory(paramStartDate, paramEndDate, paramCategoria, paramMetodoPagamento, paramIdProfissional)
+        val revenueByCategoryDTOList = revenueByCategoryProjectionList.map {
+            ReportRevenueByCategoryDTO(
+                it.category,
+                BigDecimal.valueOf(it.value).setScale(2, RoundingMode.HALF_UP),
+                BigDecimal.valueOf(it.percentage).setScale(2, RoundingMode.HALF_UP)
+            )
+        }
+
+        val revenueByProfessionalDTOList = pagamentoRepository.getRevenueByProfessional(paramStartDate, paramEndDate, paramCategoria, paramMetodoPagamento, paramIdProfissional)
+        val revenueByPaymentMethodsDTOList = pagamentoRepository.getRevenueByPaymentMethod(paramStartDate, paramEndDate, paramCategoria, paramMetodoPagamento, paramIdProfissional)
+
         return ReportDTO(
-            BigDecimal("500"), BigDecimal("4250.59"), BigDecimal("320.98"), 50,
+            todayRevenue, reportInfo.totalRevenue, reportInfo.totalPayments, reportInfo.totalServices,
+            dailyRevenueDTOList, revenueByCategoryDTOList, revenueByProfessionalDTOList, revenueByPaymentMethodsDTOList
+        )
+    }
+
+    private fun buildFakeReportDTO(): ReportDTO {
+        return ReportDTO(
+            BigDecimal("500"), BigDecimal("4250.59"), 35, 50,
             listOf(
                 ReportDailyRevenueDTO("01/10/2025", BigDecimal("200")),
                 ReportDailyRevenueDTO("02/10/2025", BigDecimal("150")),
@@ -91,8 +95,8 @@ class ReportService(
                 ReportRevenueByCategoryDTO("Estética", BigDecimal("600"), BigDecimal("60"))
             ),
             listOf(
-                ReportRevenueByProfessionalDTO("Jessica", 1, BigDecimal("200")),
-                ReportRevenueByProfessionalDTO("DJennifer", 2, BigDecimal("300"))
+                ReportRevenueByProfessionalDTO("Jessica", 1, 1, BigDecimal("200")),
+                ReportRevenueByProfessionalDTO("DJennifer", 2, 1, BigDecimal("300"))
             ),
             listOf(
                 ReportPaymentMethodsDTO("PIX", BigDecimal("800")),

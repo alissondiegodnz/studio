@@ -18,9 +18,10 @@ class ReportController(
         @Param("startDate") startDate: String,
         @Param("endDate") endDate: String,
         @Param("category") category: String?,
+        @Param("paymentMethod") paymentMethod: String?,
         @Param("professionalId") professionalId: String?,
         ): ReportDTO {
-        val params = mapOf("startDate" to startDate, "endDate" to endDate, "category" to category, "professionalId" to professionalId)
+        val params = mapOf("startDate" to startDate, "endDate" to endDate, "category" to category, "paymentMethod" to paymentMethod, "professionalId" to professionalId)
         return reportService.buildReportDTO(params)
     }
 }
