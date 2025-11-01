@@ -1,6 +1,6 @@
 package com.diniz.dto
 
-import com.diniz.domain.Servico
+import com.diniz.domain.ServicoPacote
 import java.math.BigDecimal
 
 data class ServicoPacoteDTO(
@@ -12,14 +12,14 @@ data class ServicoPacoteDTO(
     val description: String?
 ) {
     companion object {
-        fun from(servico: Servico): ServicoPacoteDTO {
+        fun from(servicoPacote: ServicoPacote): ServicoPacoteDTO {
             return ServicoPacoteDTO(
-                id = servico.id.toString(),
-                name = servico.nome,
-                category = servico.categoria,
-                status = servico.status,
-                price = servico.valor,
-                description = servico.descricao
+                id = servicoPacote.servico.id.toString(),
+                name = servicoPacote.servico.nome,
+                category = servicoPacote.servico.categoria,
+                status = servicoPacote.servico.status,
+                price = servicoPacote.valor,
+                description = servicoPacote.servico.descricao
             )
         }
     }

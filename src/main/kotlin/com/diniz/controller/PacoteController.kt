@@ -9,6 +9,7 @@ import com.diniz.repository.ServicoRepository
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import java.math.BigDecimal
 
 @RestController
 @RequestMapping("/api/packages")
@@ -40,7 +41,8 @@ class PacoteController(
     fun create(@RequestBody dto: PacoteDTO): ResponseEntity<Any> {
         val servicosPacote = dto.services.map {
             ServicoPacote(
-                servico = servicoRepository.getReferenceById(it.id!!.toLong())
+                servico = servicoRepository.getReferenceById(it.id!!.toLong()),
+                valor = it.price ?: BigDecimal.ZERO
             )
         }
         val novoPacote = Pacote(

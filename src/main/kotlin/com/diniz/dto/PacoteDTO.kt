@@ -9,7 +9,7 @@ data class PacoteDTO(
     val status: String,
     val description: String,
     val calculatedPrice: BigDecimal?,
-    val services: List<ServicoDTO>,
+    val services: List<ServicoPacoteDTO>,
 ) {
     companion object {
         fun from(pacote: Pacote): PacoteDTO {
@@ -18,8 +18,8 @@ data class PacoteDTO(
                 name = pacote.nome,
                 status = pacote.status,
                 description = pacote.descricao ?: "",
-                calculatedPrice = pacote.itens.sumOf { it.servico.valor ?: BigDecimal.ZERO },
-                services = pacote.itens.map { ServicoDTO.from(it.servico) }
+                calculatedPrice = pacote.itens.sumOf { it.valor },
+                services = pacote.itens.map { ServicoPacoteDTO.from(it) }
             )
         }
     }

@@ -2,17 +2,13 @@ package com.diniz.controller
 
 import com.diniz.domain.Cliente
 import com.diniz.dto.ClienteDTO
-import com.diniz.dto.ErrorDTO
 import com.diniz.helper.DateHelper
 import com.diniz.repository.ClienteRepository
-import org.apache.coyote.Response
 import org.springframework.data.domain.PageRequest
-import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 @RestController
 @RequestMapping("/api/clients")
@@ -23,11 +19,13 @@ class ClienteController(
 
     @GetMapping
     fun findAll(page: Int?, limit: Int?, q: String?): List<ClienteDTO> {
+        val ordenacao = Sort.by("name").ascending()
         val pageable = if (page == null || limit == null || limit <= 0) {
-            Pageable.unpaged()
+            PageRequest.of(0, Int.MAX_VALUE, ordenacao)
         } else {
-            PageRequest.of(page-1, limit);
+            PageRequest.of(page-1, limit, ordenacao);
         }
+
         val page = if (q.isNullOrBlank()) repository.findAll(pageable) else repository.findAllByNameContains(pageable, q)
         return page.content.sortedBy { it.name }.map {
             ClienteDTO.from(it, dateHelper)
