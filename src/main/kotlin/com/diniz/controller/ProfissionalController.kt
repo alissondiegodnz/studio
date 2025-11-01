@@ -15,12 +15,16 @@ class ProfissionalController(
     
     @GetMapping
     fun findAllActive(): List<ProfissionalDTO> {
-        return repository.findAll().filter { it.status == "Ativo" }.map { ProfissionalDTO.from(it) }
+        return repository.findAll().filter { it.status == "Ativo" }.map { ProfissionalDTO.from(it) }.sortedBy {
+            it.name
+        }
     }
 
     @GetMapping("/allStatus")
     fun findAll(): List<ProfissionalDTO> {
-        return repository.findAll().map { ProfissionalDTO.from(it) }
+        return repository.findAll().map { ProfissionalDTO.from(it) }.sortedBy {
+            it.name
+        }
     }
     
     @GetMapping("/{id}")

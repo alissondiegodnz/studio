@@ -15,12 +15,16 @@ class ServicoController(
     
     @GetMapping
     fun findAllActive(): List<ServicoDTO> {
-        return repository.findAll().filter { it.status == "Ativo" }.map { ServicoDTO.from(it) }
+        return repository.findAll().filter { it.status == "Ativo" }.map { ServicoDTO.from(it) }.sortedBy {
+            it.name
+        }
     }
 
     @GetMapping("/allStatus")
     fun findAll(): List<ServicoDTO> {
-        return repository.findAll().map { ServicoDTO.from(it) }
+        return repository.findAll().map { ServicoDTO.from(it) }.sortedBy {
+            it.name
+        }
     }
     
     @GetMapping("/{id}")
