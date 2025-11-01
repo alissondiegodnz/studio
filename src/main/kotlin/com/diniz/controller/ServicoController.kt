@@ -35,8 +35,8 @@ class ServicoController(
     fun create(@RequestBody dto: ServicoDTO): ServicoDTO {
         val novoServico = Servico(
             nome = dto.name,
-            categoria = dto.category,
-            status = dto.status,
+            categoria = dto.category!!,
+            status = dto.status!!,
             valor = dto.price,
             descricao = dto.description
         )
@@ -48,8 +48,8 @@ class ServicoController(
     fun update(@PathVariable id: Long, @RequestBody dto: ServicoDTO): ResponseEntity<ServicoDTO> {
         return repository.findById(id).map { existingServico ->
             existingServico.nome = dto.name
-            existingServico.categoria = dto.category
-            existingServico.status = dto.status
+            existingServico.categoria = dto.category!!
+            existingServico.status = dto.status!!
             existingServico.valor = dto.price
             existingServico.descricao = dto.description
             val savedServico = repository.save(existingServico)

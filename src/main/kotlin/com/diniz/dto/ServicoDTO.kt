@@ -6,8 +6,8 @@ import java.math.BigDecimal
 data class ServicoDTO(
     val id: String?,
     val name: String,
-    val category: String,
-    val status: String,
+    val category: String?,
+    val status: String?,
     val price: BigDecimal?,
     val description: String?
 ) {
