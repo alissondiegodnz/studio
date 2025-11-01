@@ -27,11 +27,18 @@ data class Pagamento (
     )
     var servicosPagamento: MutableList<ServicoPagamento> = mutableListOf(),
 
-    var metodoPagamento: String,
+    @OneToMany(
+        mappedBy = "pagamento",
+        cascade = [CascadeType.ALL],
+        fetch = FetchType.EAGER,
+        orphanRemoval = true
+    )
+    var metodosPagamento: MutableList<MetodoPagamento> = mutableListOf(),
+
     var data: LocalDateTime,
     var descricao: String,
     var tipoDeServico: String
 
 ) {
-    constructor(): this(null, Cliente(), Pacote(), mutableListOf(), "", LocalDateTime.now(), "", "")
+    constructor(): this(null, Cliente(), Pacote(), mutableListOf(), mutableListOf(), LocalDateTime.now(), "", "")
 }

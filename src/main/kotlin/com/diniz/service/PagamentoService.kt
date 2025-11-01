@@ -1,5 +1,6 @@
 package com.diniz.service
 
+import com.diniz.domain.MetodoPagamento
 import com.diniz.domain.Pagamento
 import com.diniz.domain.ServicoPagamento
 import com.diniz.dto.PagamentoDTO
@@ -76,18 +77,24 @@ class PagamentoService(
     fun atualizePagamento(id: Long, dto: PagamentoDTO): Pagamento? {
         dateHelper.valideDataHora(dto)
         val pagamentoExistente = repository.findById(id).orElse(null) ?: return null
-        val relacoesParaRemover = mutableListOf<ServicoPagamento>()
-        atualizeServicosPagamentoExistente(pagamentoExistente, dto, relacoesParaRemover)
-        pagamentoExistente.servicosPagamento.removeAll(relacoesParaRemover)
+
+        val servicosParaRemover = mutableListOf<ServicoPagamento>()
+        atualizeServicosPagamentoExistente(pagamentoExistente, dto, servicosParaRemover)
+        pagamentoExistente.servicosPagamento.removeAll(servicosParaRemover)
         pagamentoExistente.servicosPagamento.addAll(obtenhaNovosServicosPagamentoExistente(dto))
+
+        val metodosPagamentoParaRemover = mutableListOf<MetodoPagamento>()
+        atualizeMetodosPagamentoExistente(pagamentoExistente, dto, metodosPagamentoParaRemover)
+        pagamentoExistente.metodosPagamento.removeAll(metodosPagamentoParaRemover)
+        pagamentoExistente.metodosPagamento.addAll(obtenhaNovosMetodosPagamentoExistente(dto))
 
         pagamentoExistente.cliente = clienteRepository.getReferenceById(dto.clientId.toLong())
         pagamentoExistente.pacote = if (dto.packageId.isBlank()) null else pacoteRepository.findById(dto.packageId.toLong()).orElse(null)
-        pagamentoExistente.metodoPagamento = dto.paymentMethod
         pagamentoExistente.data = dateHelper.obtenhaDataHora(dto.date, dto.time)
         pagamentoExistente.descricao = dto.description
         pagamentoExistente.tipoDeServico = dto.serviceType
-        garantaRelacaoServicoPagamento(pagamentoExistente)
+
+        garantaRelacoesFilhasPagamento(pagamentoExistente)
         return repository.save(pagamentoExistente)
     }
 
@@ -125,25 +132,55 @@ class PagamentoService(
         return novosServicosPagamento
     }
 
+    private fun atualizeMetodosPagamentoExistente(
+        pagamentoExistente: Pagamento,
+        dto: PagamentoDTO,
+        relacoesParaRemover: MutableList<MetodoPagamento>
+    ) {
+        pagamentoExistente.metodosPagamento.forEach { metodoPagamentoExistente ->
+            val servicoPagamentoDTO = dto.paymentLines.find { it.id?.toLongOrNull() == metodoPagamentoExistente.id }
+            if (servicoPagamentoDTO != null) {
+                metodoPagamentoExistente.valor = servicoPagamentoDTO.value
+            } else {
+                relacoesParaRemover.add(metodoPagamentoExistente)
+            }
+        }
+    }
+
+    private fun obtenhaNovosMetodosPagamentoExistente(dto: PagamentoDTO): MutableList<MetodoPagamento> {
+        val novosMetodosPagamento = mutableListOf<MetodoPagamento>()
+        dto.paymentLines.map {
+            if (it.id == null || it.id.toLongOrNull() == null) {
+                novosMetodosPagamento.add(MetodoPagamento(
+                    metodoPagamento = it.paymentMethod,
+                    valor = it.value,
+                ))
+            }
+        }
+        return novosMetodosPagamento
+    }
+
     fun crieNovoPagamento(dto: PagamentoDTO) {
         dateHelper.valideDataHora(dto)
         val servicosPagamentos = obtenhaServicosNovoPagamento(dto)
+        val metodosPagamento = obtenhaMetodosPagamentoNovoPagamento(dto)
 
         val novoPagamento = Pagamento(
             cliente = clienteRepository.getReferenceById(dto.clientId.toLong()),
             pacote = if (dto.packageId.isBlank()) null else pacoteRepository.findById(dto.packageId.toLong()).orElse(null),
             servicosPagamento = servicosPagamentos,
-            metodoPagamento = dto.paymentMethod,
+            metodosPagamento = metodosPagamento,
             data = dateHelper.obtenhaDataHora(dto.date, dto.time),
             descricao = dto.description,
             tipoDeServico = dto.serviceType
         )
-        garantaRelacaoServicoPagamento(novoPagamento)
+        garantaRelacoesFilhasPagamento(novoPagamento)
         repository.save(novoPagamento)
     }
 
-    private fun garantaRelacaoServicoPagamento(pagamento: Pagamento) {
+    private fun garantaRelacoesFilhasPagamento(pagamento: Pagamento) {
         pagamento.servicosPagamento.forEach { it.pagamento = pagamento }
+        pagamento.metodosPagamento.forEach { it.pagamento = pagamento }
     }
 
     private fun obtenhaServicosNovoPagamento(dto: PagamentoDTO): MutableList<ServicoPagamento> {
@@ -153,6 +190,15 @@ class PagamentoService(
                 profissional = profissionalRepository.getReferenceById(it.professionalId.toLong()),
                 valor = it.value,
                 ehPagamentoPacote = it.isPackageService
+            )
+        } as MutableList
+    }
+
+    private fun obtenhaMetodosPagamentoNovoPagamento(dto: PagamentoDTO): MutableList<MetodoPagamento> {
+        return dto.paymentLines.map {
+            MetodoPagamento(
+                metodoPagamento = it.paymentMethod,
+                valor = it.value
             )
         } as MutableList
     }

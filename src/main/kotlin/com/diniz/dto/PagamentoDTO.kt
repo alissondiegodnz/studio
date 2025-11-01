@@ -16,7 +16,7 @@ data class PagamentoDTO(
     val packageId: String,
     val packageName: String,
     val serviceLines: List<ServicoPagamentoDTO>,
-    val paymentMethod: String,
+    val paymentLines: List<MetodoPagamentoDTO>,
     override val date: String,
     override val time: String,
     val description: String
@@ -34,7 +34,7 @@ data class PagamentoDTO(
                 packageId = pagamento.pacote?.id?.toString() ?: "",
                 packageName = pagamento.pacote?.nome ?: "",
                 serviceLines = pagamento.servicosPagamento.map { ServicoPagamentoDTO.from(it)},
-                paymentMethod = pagamento.metodoPagamento,
+                paymentLines = pagamento.metodosPagamento.map { MetodoPagamentoDTO.from(it)},
                 date = pagamento.data.format(DateTimeFormatter.ofPattern(DateHelper.FORMATO_YYYY_MM_DD)),
                 time = pagamento.data.format(DateTimeFormatter.ofPattern(DateHelper.FORMATO_HH_MM)),
                 description = pagamento.descricao
