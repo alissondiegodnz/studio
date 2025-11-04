@@ -56,27 +56,44 @@ class PacoteController(
         return ResponseEntity.noContent().build()
     }
     
-//    @PutMapping("/{id}")
-//    fun update(@PathVariable id: Long, @RequestBody dto: PacoteDTO): ResponseEntity<PacoteDTO> {
-//        return repository.findById(id).map { existingPacote ->
-//            existingPacote.nome = dto.name
-//            existingPacote.categoria = dto.category
-//            existingPacote.status = dto.status
-//            existingPacote.valor = dto.price
-//            existingPacote.descricao = dto.description
-//            val savedPacote = repository.save(existingPacote)
-//            ResponseEntity.ok(PacoteDTO.from(savedPacote))
-//        }.orElse(ResponseEntity.notFound().build())
-//    }
-    
-    @DeleteMapping("/{id}")
-    fun delete(@PathVariable id: Long): ResponseEntity<Any> {
-        return if (repository.existsById(id)) {
-            repository.deleteById(id)
-            ResponseEntity.noContent().build()
-        } else {
-            ResponseEntity.notFound().build()
+    @PutMapping("/{id}")
+    fun update(@PathVariable id: Long, @RequestBody dto: PacoteDTO): ResponseEntity<Any> {
+        val pacoteExistente = repository.getReferenceById(id)
+
+        val servicosPacoteDTO = dto.services.groupBy { it.id?.toLongOrNull() }
+        val servicosParaRemover = mutableListOf<ServicoPacote>()
+        pacoteExistente.itens.forEach { servicoPacote ->
+            val servicoPagamentoDTO = servicosPacoteDTO.get(servicoPacote.servico.id)?.getOrNull(0)
+
+            if (servicoPagamentoDTO != null) {
+                servicoPacote.valor = servicoPagamentoDTO.price ?: servicoPacote.valor
+            } else {
+                servicosParaRemover.add(servicoPacote)
+            }
         }
+        pacoteExistente.itens.removeAll(servicosParaRemover)
+
+        val idsServicosPacote = pacoteExistente.itens.map { it.servico.id }.toSet()
+        val novosServicosPacote = dto.services.mapNotNull { servicoPacoteDTO ->
+            if (servicoPacoteDTO.id == null || servicoPacoteDTO.id.toLongOrNull() !in idsServicosPacote) {
+                ServicoPacote(
+                    servico = servicoRepository.getReferenceById(servicoPacoteDTO.id!!.toLong()),
+                    valor = servicoPacoteDTO.price ?: BigDecimal.ZERO
+                )
+            } else {
+                null
+            }
+        }
+        pacoteExistente.itens.addAll(novosServicosPacote)
+
+        pacoteExistente.nome = dto.name
+        pacoteExistente.descricao = dto.description
+        pacoteExistente.status = dto.status
+
+        pacoteExistente.itens.forEach { it.pacote = pacoteExistente }
+        repository.save(pacoteExistente)
+        servicoPacoteRepository.saveAll(pacoteExistente.itens)
+        return ResponseEntity.noContent().build()
     }
     
 //    @DeleteMapping("/{id}")
