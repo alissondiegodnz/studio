@@ -78,4 +78,14 @@ class PacoteController(
             ResponseEntity.notFound().build()
         }
     }
+    
+//    @DeleteMapping("/{id}")
+//    fun delete(@PathVariable id: Long): ResponseEntity<Any> {
+//        return if (repository.existsById(id)) {
+//            repository.deleteById(id)
+//            ResponseEntity.noContent().build()
+//        } else {
+//            ResponseEntity.notFound().build()
+//        }
+//    }
 }
