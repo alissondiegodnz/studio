@@ -49,7 +49,15 @@ class ReportService(
         }
 
         val revenueByProfessionalDTOList = pagamentoRepository.getRevenueByProfessional(paramStartDate, paramEndDate, paramCategoria, paramIdProfissional)
-        val revenueByPaymentMethodsDTOList = pagamentoRepository.getRevenueByPaymentMethod(paramStartDate, paramEndDate, paramCategoria, paramIdProfissional)
+        val revenueByPaymentMethodsDTOList = pagamentoRepository.getRevenueByPaymentMethod(paramStartDate, paramEndDate, paramCategoria, paramIdProfissional).map {
+            if (it.method == "Cartão de Crédito") {
+                it.method = "Crédito"
+            }
+            if (it.method == "Cartão de Débito") {
+                it.method = "Débito"
+            }
+            it
+        }
 
         return ReportDTO(
             todayRevenue, reportInfo.totalRevenue, reportInfo.totalPayments, reportInfo.totalServices,

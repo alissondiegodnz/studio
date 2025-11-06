@@ -3,6 +3,6 @@ package com.diniz.dto
 import java.math.BigDecimal
 
 data class ReportPaymentMethodsDTO (
-    val method: String,
+    var method: String,
     val value: BigDecimal
 )

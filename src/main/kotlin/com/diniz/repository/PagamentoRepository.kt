@@ -133,17 +133,31 @@ interface PagamentoRepository : JpaRepository<Pagamento, Long> {
     ): List<ReportRevenueByProfessionalDTO>
 
     @Query("""
-        SELECT mp.metodoPagamento      AS method,
-	        COALESCE(SUM(mp.valor), 0) AS value
-        FROM MetodoPagamento mp
-        WHERE mp.pagamento.id IN (
-            SELECT DISTINCT sp.pagamento.id
-            FROM ServicoPagamento sp
+        SELECT mp.metodoPagamento AS method, 
+           CAST(
+           COALESCE(SUM(soma.valorServicos * calc.porcentagemMetodo), 0) 
+           as BigDecimal)         AS value
+        FROM (
+            SELECT p.id as pagamentoId,
+                   SUM(sp.valor) as valorServicos
+            FROM Pagamento p
+            JOIN p.servicosPagamento sp
             WHERE sp.pagamento.data >= :startDate
               AND sp.pagamento.data <= :endDate
               AND (:category IS NULL OR sp.servico.categoria = :category)
               AND (:profissional IS NULL OR sp.profissional.id = :profissional)
-        )
+            GROUP BY p.id
+        ) soma
+        JOIN MetodoPagamento mp ON mp.pagamento.id = soma.pagamentoId
+        JOIN (
+            SELECT mp2.id as id,
+                   CAST(mp2.valor AS DOUBLE) / (
+                       SELECT SUM(mp3.valor) as valor
+                       FROM MetodoPagamento mp3 
+                       WHERE mp3.pagamento.id = mp2.pagamento.id
+                   ) as porcentagemMetodo
+            FROM MetodoPagamento mp2
+        ) calc ON calc.id = mp.id
         GROUP BY mp.metodoPagamento
     """)
     fun getRevenueByPaymentMethod(
