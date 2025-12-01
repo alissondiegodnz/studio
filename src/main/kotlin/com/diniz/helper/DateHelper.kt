@@ -49,6 +49,18 @@ class DateHelper {
         return if (data.isNullOrBlank()) null else LocalDate.parse(data, DateTimeFormatter.ofPattern(DateHelper.FORMATO_YYYY_MM_DD)).atTime(23, 59, 59)
     }
 
+    fun obtenhaDataHoraInicioFiltroCalendario(data: String?): LocalDateTime? {
+        if (data.isNullOrBlank()) { return null }
+        val diaInicioMes = LocalDate.parse(data.substring(0, 10), DateTimeFormatter.ofPattern(DateHelper.FORMATO_YYYY_MM_DD)).minusMonths(1).withDayOfMonth(15)
+        return diaInicioMes.atStartOfDay()
+    }
+
+    fun obtenhaDataHoraFimFiltroCalendario(data: String?): LocalDateTime? {
+        if (data.isNullOrBlank()) { return null }
+        val diaFimMes = LocalDate.parse(data.substring(0, 10), DateTimeFormatter.ofPattern(DateHelper.FORMATO_YYYY_MM_DD)).plusMonths(1).withDayOfMonth(15)
+        return diaFimMes.atTime(23, 59, 59)
+    }
+
     fun formatePara_DD_MM_YYYY(data: String, formato: DateTimeFormatter): String {
         return LocalDate.parse(data, formato).format(DATE_TIME_FORMATTER_DD_MM_YYYY)
     }

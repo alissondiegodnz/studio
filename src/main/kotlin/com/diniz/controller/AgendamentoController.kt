@@ -22,9 +22,9 @@ class AgendamentoController(
 ) {
     
     @GetMapping
-    fun findAll(startDate: String?, endDate: String?, category: String?, professionalId: String?): List<AgendamentoDTO> {
-        val paramStartDate = dateHelper.obtenhaDataHoraInicioDoDia(startDate)
-        val paramEndDate = dateHelper.obtenhaDataHoraFimDoDia(endDate)
+    fun findAll(currentDate: String?, category: String?, professionalId: String?): List<AgendamentoDTO> {
+        val paramStartDate = dateHelper.obtenhaDataHoraInicioFiltroCalendario(currentDate)
+        val paramEndDate = dateHelper.obtenhaDataHoraFimFiltroCalendario(currentDate)
         val agendamentos = repository.findAllByFilters(paramStartDate, paramEndDate, category, if (professionalId.isNullOrBlank()) null else professionalId.toLong())
 
         return agendamentos.map {
